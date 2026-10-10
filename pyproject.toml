@@ -1,3 +1,21 @@
+[project]
+name = "ctd-python"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "thegingeroriginator", email = "79474136+dsire0@users.noreply.github.com" }
+]
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+ctd-python = "ctd_python:main"
+
+[build-system]
+requires = ["uv_build>=0.11.32,<0.12.0"]
+build-backend = "uv_build"
+
 [tool.ruff]
 line-length = 79
 
