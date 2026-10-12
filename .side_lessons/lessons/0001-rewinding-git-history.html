@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 0001: Rewinding a Git Repository to a Specific Commit</title>
+  <link rel="stylesheet" href="../assets/tufte-teach.css" />
+</head>
+<body>
+  <main>
+    <nav class="top-nav">
+      <span><strong>Side Lesson 0001</strong> &middot; Git Repository State Management</span>
+      <div>
+        <a href="../reference/git-time-travel-cheatsheet.html">Open Quick-Reference Cheat Sheet &rarr;</a>
+      </div>
+    </nav>
+
+    <header class="lesson-header">
+      <span class="eyebrow">Side Lesson &middot; Practical Version Control</span>
+      <h1>Rewinding Your Git Branch to <code>e792e36</code></h1>
+      <p class="subtitle">How to move <code>main</code> back to an earlier commit safely—and recover if anything goes wrong</p>
+    </header>
+
+    <!-- SECTION 1: GROUNDED DIAGNOSIS OF THIS REPO -->
+    <section>
+      <h2>1. What Your Repository Looks Like Right Now</h2>
+      <p>
+        Before changing history in Git, always inspect where your pointers sit. In your workspace (<code>d:\WinDev\WinGitRepos\ctd-Learns</code>), your commit history currently looks like this:
+      </p>
+
+      <div class="simulator-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+          <strong>Interactive Commit Pointer Simulator</strong>
+          <span style="font-size:0.82rem; color:var(--text-muted);">Click a command below to preview how pointers move:</span>
+        </div>
+
+        <div class="commit-track">
+          <div class="commit-node" id="node-e792e36">
+            <span class="sha-badge">e792e36 (Target)</span>
+            <span class="commit-msg">example: broken.py fixed per instruction</span>
+            <div class="pointer-tags" id="tags-e792e36"></div>
+          </div>
+
+          <div class="commit-node" id="node-a890ff8">
+            <span class="sha-badge">a890ff8 (+1 ahead)</span>
+            <span class="commit-msg">Add python-intro-homework/ to .gitignore</span>
+            <div class="pointer-tags" id="tags-a890ff8"></div>
+          </div>
+
+          <div class="commit-node" id="node-d766ec1">
+            <span class="sha-badge">d766ec1 (+2 ahead)</span>
+            <span class="commit-msg">removed (reverted the 3 .gitignore lines)</span>
+            <div class="pointer-tags" id="tags-d766ec1"></div>
+          </div>
+        </div>
+
+        <div class="sim-controls">
+          <button class="sim-btn active" data-sim="current">1. Current State (HEAD at d766ec1)</button>
+          <button class="sim-btn" data-sim="detach">2. Preview: git switch --detach e792e36</button>
+          <button class="sim-btn" data-sim="resetHard">3. Preview: git reset --hard e792e36</button>
+        </div>
+
+        <div class="sim-status" id="sim-explanation"></div>
+      </div>
+
+      <div class="callout safe">
+        <span class="callout-title">Key Discovery About Your Repo</span>
+        Your remote branch (<code>origin/main</code>) is <strong>already</strong> at <code>e792e36fb8205c56c914811e3703178ab84e63ed</code>! The two newer commits (<code>a890ff8</code> and <code>d766ec1</code>) only exist locally and were never pushed. Even better: <code>a890ff8</code> added 3 lines to <code>.gitignore</code> and <code>d766ec1</code> removed those exact 3 lines, so there is zero file difference between <code>HEAD</code> and <code>e792e36</code>.
+      </div>
+    </section>
+
+    <!-- SECTION 2: CORE KNOWLEDGE -->
+    <section>
+      <h2>2. The Knowledge: How <code>git reset</code> Rewinds a Branch</h2>
+      <p>
+        In Git, a branch name like <code>main</code> is simply a movable 40-character pointer to a commit SHA (<a href="https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell" target="_blank" rel="noopener"><em>Pro Git</em> &sect;3.1</a>). When you want your branch to go back to an earlier commit and drop unpushed local commits, you use <a href="https://git-scm.com/docs/git-reset" target="_blank" rel="noopener"><code>git reset</code></a>:
+      </p>
+      <ul>
+        <li>
+          <strong><code>git reset --hard &lt;commit-sha&gt;</code></strong> moves both <code>HEAD</code> and your current branch pointer (<code>main</code>) directly to <code>&lt;commit-sha&gt;</code>, and resets both the staging index and working directory files to match that snapshot (<a href="https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified" target="_blank" rel="noopener"><em>Pro Git</em> &sect;7.7</a>).
+        </li>
+        <li>
+          <strong>Why safety checkpoints matter:</strong> Because <code>--hard</code> overwrites uncommitted modifications in tracked files, always run <code>git status</code> first and drop a lightweight backup branch (<code>git branch checkpoint/pre-reset HEAD</code>) before resetting.
+        </li>
+        <li>
+          <strong>Your built-in safety net (<a href="https://git-scm.com/docs/git-reflog" target="_blank" rel="noopener"><code>git reflog</code></a>):</strong> Even after <code>git reset --hard</code>, Git does not immediately delete the old commits from disk. They remain recorded in your local reference log for at least 30&ndash;90 days.
+        </li>
+      </ul>
+      <p>
+        <em>Need a side-by-side comparison with <code>git revert</code> and <code>git switch --detach</code>? Open the <a href="../reference/git-time-travel-cheatsheet.html">Git Time-Travel Cheat Sheet</a>.</em>
+      </p>
+    </section>
+
+    <!-- SECTION 3: RETRIEVAL PRACTICE (QUIZ) -->
+    <section>
+      <h2>3. Quick Retrieval Practice</h2>
+      <p>
+        Test your recall before running the commands in your terminal. Click an option to get instant feedback:
+      </p>
+
+      <!-- Quiz 1: Every option is exactly 4 words, 24 characters -->
+      <div class="quiz-card">
+        <div class="quiz-question">
+          Q1. Which command rewinds <code>main</code> to <code>e792e36</code> and syncs all tracked files on disk?
+        </div>
+        <div class="quiz-options">
+          <button class="quiz-opt" data-correct="false" data-feedback="Not quite: --soft moves the branch pointer but leaves changes staged in the index.">git reset --soft e792e36</button>
+          <button class="quiz-opt" data-correct="true" data-feedback="Correct! --hard moves the branch pointer and resets both the staging area and working tree to match e792e36.">git reset --hard e792e36</button>
+          <button class="quiz-opt" data-correct="false" data-feedback="Not quite: --keep is used to preserve uncommitted local changes when there are no conflicts, rather than forcing an exact match.">git reset --keep e792e36</button>
+          <button class="quiz-opt" data-correct="false" data-feedback="Not quite: git fetch downloads objects from a remote repository without rewinding your local branch.">git fetch --tags e792e36</button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <!-- Quiz 2: Every option is exactly 4 words, 27 characters -->
+      <div class="quiz-card">
+        <div class="quiz-question">
+          Q2. Which command creates a safety backup branch pointing to your current <code>HEAD</code> before resetting?
+        </div>
+        <div class="quiz-options">
+          <button class="quiz-opt" data-correct="false" data-feedback="Not quite: git status inspects the working tree and does not create a branch.">git status backup-main HEAD</button>
+          <button class="quiz-opt" data-correct="false" data-feedback="Not quite: git revert creates inverse commits rather than creating a backup branch pointer.">git revert backup-main HEAD</button>
+          <button class="quiz-opt" data-correct="true" data-feedback="Correct! 'git branch backup-main HEAD' creates a lightweight pointer at your current commit without switching branches.">git branch backup-main HEAD</button>
+          <button class="quiz-opt" data-correct="false" data-feedback="Not quite: git reflog inspects reference history rather than creating a branch.">git reflog backup-main HEAD</button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <!-- Quiz 3: Every option is exactly 3 words, 22 characters -->
+      <div class="quiz-card">
+        <div class="quiz-question">
+          Q3. If you ever reset to the wrong SHA and didn't make a backup branch, which command reveals previous <code>HEAD</code> commits?
+        </div>
+        <div class="quiz-options">
+          <button class="quiz-opt" data-correct="false" data-feedback="Not quite: git status shows untracked and modified files, not historical HEAD movements.">git status --untracked</button>
+          <button class="quiz-opt" data-correct="true" data-feedback="Correct! git reflog shows a chronological journal of every commit HEAD has pointed to.">git reflog --no-abbrev</button>
+          <button class="quiz-opt" data-correct="false" data-feedback="Not quite: git branch --no-merged only lists existing named branches, not orphaned commits.">git branch --no-merged</button>
+          <button class="quiz-opt" data-correct="false" data-feedback="Not quite: git revert applies inverse diffs; it does not list historical HEAD positions.">git revert --no-commit</button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: HANDS-ON EXECUTION CHECKLIST -->
+    <section>
+      <h2>4. Hands-On Practice: Run the Reset Yourself</h2>
+      <p>
+        Run these four steps in your PowerShell terminal at <code>d:\WinDev\WinGitRepos\ctd-Learns</code>. Check off each box as you go (<span id="checklist-progress" style="font-weight:700; color:var(--accent-primary);">0 of 4 steps completed</span>):
+      </p>
+
+      <div class="step-card">
+        <label class="step-header">
+          <input type="checkbox" class="step-check" />
+          <span>Step 1: Verify your working tree is clean and inspect the commit log</span>
+        </label>
+        <p style="margin-top:0.5rem; margin-bottom:0.5rem; font-size:0.95rem;">
+          Confirm there are no uncommitted edits to tracked files and verify that <code>e792e36fb8205c56c914811e3703178ab84e63ed</code> is 2 commits behind <code>HEAD</code>:
+        </p>
+        <div class="cmd-block">
+          <code>git status --short --branch
+git log --oneline -n 4</code>
+          <button class="copy-btn" data-copy="git status --short --branch; git log --oneline -n 4">Copy</button>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <label class="step-header">
+          <input type="checkbox" class="step-check" />
+          <span>Step 2: Create a pre-reset safety checkpoint branch</span>
+        </label>
+        <p style="margin-top:0.5rem; margin-bottom:0.5rem; font-size:0.95rem;">
+          This bookmarks your current <code>HEAD</code> (<code>d766ec1</code>) just in case you want to inspect it later:
+        </p>
+        <div class="cmd-block">
+          <code>git branch checkpoint/pre-reset-d766ec1 HEAD</code>
+          <button class="copy-btn" data-copy="git branch checkpoint/pre-reset-d766ec1 HEAD">Copy</button>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <label class="step-header">
+          <input type="checkbox" class="step-check" />
+          <span>Step 3: Rewind <code>main</code> to <code>e792e36fb8205c56c914811e3703178ab84e63ed</code></span>
+        </label>
+        <p style="margin-top:0.5rem; margin-bottom:0.5rem; font-size:0.95rem;">
+          Execute the hard reset. Git will respond: <code>HEAD is now at e792e36 example: broken.py fixed per instruction</code>:
+        </p>
+        <div class="cmd-block">
+          <code>git reset --hard e792e36fb8205c56c914811e3703178ab84e63ed</code>
+          <button class="copy-btn" data-copy="git reset --hard e792e36fb8205c56c914811e3703178ab84e63ed">Copy</button>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <label class="step-header">
+          <input type="checkbox" class="step-check" />
+          <span>Step 4: Verify that <code>main</code> and <code>origin/main</code> are now aligned</span>
+        </label>
+        <p style="margin-top:0.5rem; margin-bottom:0.5rem; font-size:0.95rem;">
+          Check your branch status and clean up the temporary checkpoint branch once you see <code>main...origin/main</code> with no <code>[ahead 2]</code> badge:
+        </p>
+        <div class="cmd-block">
+          <code>git status --short --branch
+git log --oneline -n 3
+git branch -D checkpoint/pre-reset-d766ec1</code>
+          <button class="copy-btn" data-copy="git status --short --branch; git log --oneline -n 3; git branch -D checkpoint/pre-reset-d766ec1">Copy</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: PRIMARY SOURCE & FOLLOW-UP -->
+    <section>
+      <h2>5. Primary Source Recommendation &amp; Next Steps</h2>
+      <div class="callout warn">
+        <span class="callout-title">Recommended Primary Reading</span>
+        Read <strong><a href="https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified" target="_blank" rel="noopener"><em>Pro Git</em> &sect;7.7: "Reset Demystified" by Scott Chacon &amp; Ben Straub</a></strong>. It is the definitive explanation of how Git's three trees (<code>HEAD</code>, Index, and Working Directory) interact during <code>reset</code> and <code>checkout</code>.
+      </div>
+    </section>
+
+    <footer class="lesson-footer">
+      <p>
+        <strong>Have a follow-up question?</strong> Ask me directly in the chat! Once you run the commands in your terminal, let me know and I will verify the repository state with you.
+      </p>
+      <p>
+        Related Reference: <a href="../reference/git-time-travel-cheatsheet.html">Git Time-Travel &amp; History Rewind Cheat Sheet</a>
+      </p>
+    </footer>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>
+

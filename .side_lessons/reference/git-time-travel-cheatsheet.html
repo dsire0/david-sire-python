@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reference: Git Time-Travel &amp; History Rewind Cheat Sheet</title>
+  <link rel="stylesheet" href="../assets/tufte-teach.css" />
+</head>
+<body>
+  <main>
+    <nav class="top-nav">
+      <span><strong>Side-Lesson Reference</strong> &middot; Git Version Control</span>
+      <div>
+        <a href="../lessons/0001-rewinding-git-history.html">&larr; Back to Lesson 0001: Rewinding Git History</a>
+      </div>
+    </nav>
+
+    <header class="lesson-header">
+      <span class="eyebrow">Quick Reference &amp; Glossary</span>
+      <h1>Git Time-Travel Cheat Sheet</h1>
+      <p class="subtitle">Choosing between <code>reset</code>, <code>switch --detach</code>, <code>revert</code>, and <code>reflog</code></p>
+    </header>
+
+    <section>
+      <h2>1. Decision Matrix: Which Command Do You Need?</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Goal</th>
+            <th>Command</th>
+            <th>Rewrites History?</th>
+            <th>Best Used When&hellip;</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Move branch pointer back &amp; match files</strong></td>
+            <td><code>git reset --hard &lt;commit&gt;</code></td>
+            <td><strong>Yes</strong> (discards newer commits from branch)</td>
+            <td>Commits are <strong>local/unpushed</strong> (like your 2 local commits ahead of <code>origin/main</code>).</td>
+          </tr>
+          <tr>
+            <td><strong>Move branch pointer back, keep changes staged</strong></td>
+            <td><code>git reset --soft &lt;commit&gt;</code></td>
+            <td><strong>Yes</strong></td>
+            <td>You want to squash or re-commit the newer work differently.</td>
+          </tr>
+          <tr>
+            <td><strong>Undo commits safely on a shared branch</strong></td>
+            <td><code>git revert --no-commit &lt;commit&gt;..HEAD</code></td>
+            <td><strong>No</strong> (adds a new inverse commit)</td>
+            <td>Commits were already pushed and teammates pulled them.</td>
+          </tr>
+          <tr>
+            <td><strong>Look around an old commit temporarily</strong></td>
+            <td><code>git switch --detach &lt;commit&gt;</code></td>
+            <td><strong>No</strong></td>
+            <td>You just want to run tests or inspect old code, then return via <code>git switch -</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>2. The Three Trees Affected by <code>git reset</code></h2>
+      <p>
+        According to <a href="https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified" target="_blank" rel="noopener"><em>Pro Git</em> &sect;7.7 (Reset Demystified)</a>, Git manages three internal trees:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Flag</th>
+            <th>1. <code>HEAD</code> &amp; Branch Pointer</th>
+            <th>2. Index (Staging Area)</th>
+            <th>3. Working Directory (Disk Files)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>--soft</code></td>
+            <td>Moves to target commit</td>
+            <td>Unchanged (keeps newer changes staged)</td>
+            <td>Unchanged</td>
+          </tr>
+          <tr>
+            <td><code>--mixed</code> <em>(default)</em></td>
+            <td>Moves to target commit</td>
+            <td>Reset to match target commit</td>
+            <td>Unchanged (changes stay unstaged)</td>
+          </tr>
+          <tr>
+            <td><code>--hard</code></td>
+            <td>Moves to target commit</td>
+            <td>Reset to match target commit</td>
+            <td><strong>Reset to match target commit</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>3. Standard Safety Protocol (Copy-Paste Workflow)</h2>
+
+      <h3>Step A: Inspect Working Tree &amp; Target Commit</h3>
+      <div class="cmd-block">
+        <code>git status --short --branch
+git log --oneline -n 5</code>
+        <button class="copy-btn" data-copy="git status --short --branch; git log --oneline -n 5">Copy</button>
+      </div>
+
+      <h3>Step B: Create a Safety Checkpoint Branch</h3>
+      <div class="cmd-block">
+        <code>git branch checkpoint/pre-reset HEAD</code>
+        <button class="copy-btn" data-copy="git branch checkpoint/pre-reset HEAD">Copy</button>
+      </div>
+
+      <h3>Step C: Rewind Current Branch to Target SHA</h3>
+      <div class="cmd-block">
+        <code>git reset --hard e792e36fb8205c56c914811e3703178ab84e63ed</code>
+        <button class="copy-btn" data-copy="git reset --hard e792e36fb8205c56c914811e3703178ab84e63ed">Copy</button>
+      </div>
+
+      <h3>Step D: Emergency Undo (If You Reset Too Far)</h3>
+      <div class="cmd-block">
+        <code>git reflog -n 5
+git reset --hard checkpoint/pre-reset</code>
+        <button class="copy-btn" data-copy="git reflog -n 5">Copy</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Mini-Glossary</h2>
+      <ul>
+        <li><strong><code>HEAD</code></strong>: The pointer to your currently checked-out branch or commit snapshot (<a href="https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefHEADaHEAD" target="_blank" rel="noopener">Git Glossary</a>).</li>
+        <li><strong>Commit SHA</strong>: A 40-character hexadecimal cryptographic hash (e.g., <code>e792e36fb8205c56c914811e3703178ab84e63ed</code>) uniquely identifying a snapshot and its parent history.</li>
+        <li><strong>Reflog (Reference Log)</strong>: Local journal recording every movement of <code>HEAD</code> and branch tips over the last 90 days (<a href="https://git-scm.com/docs/git-reflog" target="_blank" rel="noopener"><code>git-reflog</code> docs</a>).</li>
+      </ul>
+    </section>
+
+    <footer class="lesson-footer">
+      <p>
+        Return to <a href="../lessons/0001-rewinding-git-history.html">Lesson 0001: Rewinding a Git Branch to an Earlier Commit</a> &middot; Ask your agent in chat anytime if you want to test another scenario!
+      </p>
+    </footer>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>
+
